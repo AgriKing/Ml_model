@@ -1,35 +1,22 @@
+import os
+import pickle
 import pandas as pd
 from flask import Flask, request, jsonify
-from joblib import dump, load
-from datetime import datetime
-import os
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import LabelEncoder
 from flask_cors import CORS
+from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for cross-origin requests
+CORS(app)
 
-# Load dataset and preprocess
-df = pd.read_csv("C:\\Users\\HARSH PATIL\\OneDrive\\New Ml\\Ml_project\\Final Dataset.csv")
+# Load the saved model and label encoder
+model_path = os.path.join(os.getcwd(), 'models', 'model.pkl')
+le_path = os.path.join(os.getcwd(), 'models', 'label_encoder.pkl')
 
-# Initialize LabelEncoder for Medicine Names
-le = LabelEncoder()
-df['Medicine Name Encoded'] = le.fit_transform(df['Medicine Name'])
+with open(model_path, 'rb') as model_file:
+    model = pickle.load(model_file)
 
-# Features and target variable
-X = df[['Medicine Name Encoded', 'Composition Mg', 'Quantity', 'Remaining Quantity', 'Price']]
-y = df['Selling Prices']
-
-# Train the model using RandomForestRegressor
-model = RandomForestRegressor(random_state=42)
-model.fit(X, y)
-
-# Save the model and label encoder
-model_path = os.path.join(os.getcwd(), 'model.joblib')
-le_path = os.path.join(os.getcwd(), 'label_encoder.joblib')
-dump(model, model_path)
-dump(le, le_path)
+with open(le_path, 'rb') as le_file:
+    le = pickle.load(le_file)
 
 # Function to calculate remaining months from expiry date
 def calculate_remaining_months(expiry_date_str):
@@ -38,25 +25,21 @@ def calculate_remaining_months(expiry_date_str):
     remaining_months = (expiry_date - current_date).days // 30
     return remaining_months
 
-# Route to handle prediction
+# Prediction endpoint
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json()
     
     try:
-        # Extract the required fields from the request
+        # Extract required fields from the request
         medicine_name = data['medicine_name']
         composition_mg = float(data['composition_mg'])
         quantity = int(data['quantity'])
         price = float(data['price'])
         remaining_quantity = int(data['remaining_quantity'])
-        expiry_date_str = data['expiry_date']  # Expiry date in format 'dd-mm-yyyy'
+        expiry_date_str = data['expiry_date']  # Expiry date in 'yyyy-mm-dd'
     except (KeyError, ValueError):
         return jsonify({'error': 'Invalid input data'}), 400
-
-    # Load the saved label encoder and model
-    model = load(model_path)
-    le = load(le_path)
 
     # Convert medicine name to encoded form
     try:
@@ -67,7 +50,7 @@ def predict():
     # Calculate remaining months based on expiry date
     remaining_months = calculate_remaining_months(expiry_date_str)
 
-    # Prepare the input data for prediction
+    # Prepare input data for prediction
     input_data = pd.DataFrame({
         'Medicine Name Encoded': [encoded_medicine],
         'Composition Mg': [composition_mg],
@@ -80,9 +63,8 @@ def predict():
     # Make the prediction
     predicted_price = model.predict(input_data)
 
-    # Return the prediction as JSON
+    # Return prediction as JSON
     return jsonify({'predicted_price': predicted_price[0]})
 
-# Update the app to listen on all interfaces (for external access)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
