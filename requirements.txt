@@ -23,6 +23,7 @@ fonttools==4.55.3
 future==1.0.0
 gevent==24.11.1
 greenlet==3.1.1
+gunicorn==20.0.0
 h11==0.14.0
 idna==3.10
 ipykernel==6.29.5
@@ -63,7 +64,6 @@ pytesseract==0.3.13
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 pytz==2024.2
-pywin32==308
 pyzmq==26.2.0
 requests==2.32.3
 requests-file==2.1.0
