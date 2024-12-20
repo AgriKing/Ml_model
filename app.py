@@ -54,9 +54,9 @@ def predict():
     input_data = pd.DataFrame({
         'Medicine Name Encoded': [encoded_medicine],
         'Composition Mg': [composition_mg],
+        'Price': [price],
         'Quantity': [quantity],
         'Remaining Quantity': [remaining_quantity],
-        'Price': [price],
         'Remaining Months': [remaining_months]
     })
 
